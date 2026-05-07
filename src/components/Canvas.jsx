@@ -1,14 +1,23 @@
-/* eslint-disable no-unused-vars */
-import { useCanvas } from '../hooks/useCanvas';
-import './canvas.css'
+import { useRef } from "react";
 
 export default function Canvas() {
-  const { canvasRef, cellCount } = useCanvas();
+  const canvasRef = useRef(null);
+  const ctx = useRef(null);
+
+  const stateRef = useRef({
+    viewport: { offsetX: 0, offsetY: 0, scale: 1.0 },
+    cells: new Map(),
+    mouse: {
+      isDown: false
+    }
+  })
 
   return (
-    <canvas
-      ref={canvasRef}
-      className={'canvas'}
-    />
-  );
+    <div className="canvas-wrapper">
+      <canvas
+        ref={canvasRef}
+
+      />
+    </div>
+  )
 }

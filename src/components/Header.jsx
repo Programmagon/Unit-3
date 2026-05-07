@@ -1,40 +1,44 @@
-import { useProject } from '../hooks/useProject';
 import Divider from './Divider';
-import Spacer from './Spacer';
-import { Settings2Icon, BlocksIcon } from 'lucide-react';
-import { getIconColor } from '../theme';
+import { DownloadIcon, UploadIcon, MousePointer2Icon, PenIcon } from 'lucide-react';
 
-export default function Header() {
-  const { projectSettings, updateProjectSettings, toggleSidebar } = useProject();
+export default function Header({ selectedTool, setSelectedTool, selectedCellType, setSelectedCellType, cellTypes }) {
+
+  const handlePointerClick = () => setSelectedTool('pointer');
+  const handlePenClick = () => setSelectedTool('pen');
 
   return (
     <header className='header'>
-      <h1>Unit 3</h1>
-      <Divider />
-      <input
-        type='text'
-        placeholder='Project name'
-        value={projectSettings.name}
-        onChange={(e) => updateProjectSettings({ name: e.target.value })}
-      />
-      <Divider />
-      <Spacer />
-      <button
-        className='icon-button'
-        onClick={() => toggleSidebar('settings')}
-        style={{ color: getIconColor('settings') }}
-        title='Settings'
-      >
-        <Settings2Icon size={40} />
+      <input type='text' placeholder='Project name' className='project-name' />
+      <button className='icon-button'>
+        <DownloadIcon strokeWidth={2} />
       </button>
-      <button
-        className='icon-button'
-        onClick={() => toggleSidebar('extensions')}
-        style={{ color: getIconColor('extensions') }}
-        title='Extensions'
-      >
-        <BlocksIcon size={40} />
+      <button className='icon-button'>
+        <UploadIcon />
       </button>
-    </header>
+      <Divider />
+      <button className={`icon-button ${selectedTool === 'pointer' ? 'active' : ''}`} onClick={handlePointerClick}>
+        <MousePointer2Icon />
+      </button>
+      <button className={`icon-button ${selectedTool === 'pen' ? 'active' : ''}`} onClick={handlePenClick}>
+        <PenIcon />
+      </button>
+      {selectedTool === 'pen' && (
+        <div className='pen-toolbar'>
+          {Object.values(cellTypes)
+            .filter((type) => type.id !== 'empty')
+            .map((type) => (
+              <button
+                key={type.id}
+                type='button'
+                className={`cell-type ${selectedCellType === type.id ? 'active' : ''}`}
+                style={{ borderColor: type.border }}
+                onClick={() => setSelectedCellType(type.id)}
+              >
+                {type.symbol || type.label[0]}
+              </button>
+            ))}
+        </div>
+      )}
+    </header >
   );
 }
