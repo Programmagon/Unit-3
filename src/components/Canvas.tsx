@@ -2,7 +2,7 @@ import { useRef, useEffect, useCallback } from 'react';
 import { useGridStore }  from '../store/gridStore';
 import { useUIStore }    from '../store/uiStore';
 import { renderFrame }   from '../canvas/renderer';
-import { createMouseState, getCellAt, applyTool, applyWheel, type Tool } from '../canvas/input';
+import { createMouseState, getCellAt, applyWheel, type Tool } from '../canvas/input';
 import { key }           from '../simulation/grid';
 import type { Camera }   from '../canvas/renderer';
 
