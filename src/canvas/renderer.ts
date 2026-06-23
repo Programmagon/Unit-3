@@ -1,18 +1,9 @@
 // Kein React-Import — nur Canvas-API!
 import type { Grid } from '../simulation/types';
 import { fromKey } from '../simulation/grid';
+import { type Camera, worldToScreen } from './coordinates';
 
-export interface Camera {
-  x: number;    // Welt-X der linken oberen Ecke
-  y: number;    // Welt-Y der linken oberen Ecke
-  zoom: number; // Pixel pro Zelle
-}
-
-export const worldToScreen = (wx: number, wy: number, cam: Camera): [number, number] =>
-  [(wx - cam.x) * cam.zoom, (wy - cam.y) * cam.zoom];
-
-export const screenToWorld = (sx: number, sy: number, cam: Camera): [number, number] =>
-  [sx / cam.zoom + cam.x, sy / cam.zoom + cam.y];
+export type { Camera };
 
 const CELL_COLORS: Record<string, { on: string; off: string; glow: string }> = {
   cable:    { on: '#00ff88', off: '#0b2e1a', glow: 'rgba(0,255,136,.35)'  },
@@ -34,10 +25,6 @@ function drawRoundedRect(
   ctx.closePath();
 }
 
-/**
- * Zeichnet einen vollständigen Frame.
- * ctx muss bereits mit setTransform(dpr,0,0,dpr,0,0) skaliert sein.
- */
 export function renderFrame(
   ctx: CanvasRenderingContext2D,
   grid: Grid, cam: Camera,
@@ -47,7 +34,6 @@ export function renderFrame(
   ctx.fillStyle = '#0b0b1e';
   ctx.fillRect(0, 0, width, height);
 
-  // Gitterlinien
   ctx.strokeStyle = '#13133a'; ctx.lineWidth = 1;
   ctx.beginPath();
   for (let gx = Math.floor(cam.x); gx <= cam.x + width / z + 1; gx++) {
@@ -60,7 +46,6 @@ export function renderFrame(
   }
   ctx.stroke();
 
-  // Zellen
   for (const [k, cell] of grid) {
     const [cx, cy] = fromKey(k);
     const [sx, sy] = worldToScreen(cx, cy, cam);

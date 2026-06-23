@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Tool } from '../canvas/input';
-import type { Camera } from '../canvas/renderer';
+// Camera kommt jetzt aus coordinates.ts (single source of truth)
+import type { Camera } from '../canvas/coordinates';
 
 interface UIStore {
   tool:         Tool;

@@ -22,7 +22,7 @@ export function Toolbar() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) return;
+      if (['INPUT','TEXTAREA'].includes((e.target as HTMLElement).tagName)) return;
       if (e.key === '1') setTool('cable');
       if (e.key === '2') setTool('inverter');
       if (e.key === '3') setTool('delay');
@@ -35,50 +35,46 @@ export function Toolbar() {
   }, [running, setTool, setRunning, step]);
 
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px',
-      background: '#0f0f2a', borderBottom: '1px solid #1c1c48',
-      fontFamily: "'Courier New', monospace", flexShrink: 0,
-    }}>
-      <span style={{ color: '#4455ee', fontWeight: 'bold', fontSize: 14, marginRight: 4 }}>
-        ▣ Sim-Editor
-      </span>
-      <div style={{ display: 'flex', gap: 3 }}>
+    <div style={{ display:'flex', alignItems:'center', gap:6, padding:'6px 10px',
+      background:'#0f0f2a', borderBottom:'1px solid #1c1c48',
+      fontFamily:"'Courier New',monospace", flexShrink:0 }}>
+      <span style={{ color:'#4455ee', fontWeight:'bold', fontSize:14, marginRight:4 }}>▣ Unit-3</span>
+      <div style={{ display:'flex', gap:3 }}>
         {TOOLS.map(t => (
           <button key={t.id} onClick={() => setTool(t.id)} style={{
-            padding: '3px 10px', borderRadius: 3, cursor: 'pointer', fontSize: 11,
-            fontFamily: 'inherit', outline: 'none',
+            padding:'3px 10px', borderRadius:3, cursor:'pointer', fontSize:11,
+            fontFamily:'inherit', outline:'none',
             background: tool === t.id ? t.color : 'transparent',
             color:       tool === t.id ? '#000' : t.color,
             border:     `1px solid ${t.color}55`,
             fontWeight:  tool === t.id ? 'bold' : 'normal',
           }}>
-            {t.icon} {t.label} <span style={{ opacity: .35 }}>[{t.shortcut}]</span>
+            {t.icon} {t.label} <span style={{ opacity:.35 }}>[{t.shortcut}]</span>
           </button>
         ))}
       </div>
-      <div style={{ flex: 1 }} />
+      <div style={{ flex:1 }} />
       <button onClick={() => { if (!running) step(); }} disabled={running} style={{
-        padding: '3px 10px', borderRadius: 3, cursor: running ? 'default' : 'pointer',
-        fontFamily: 'inherit', fontSize: 11, outline: 'none', background: 'transparent',
+        padding:'3px 10px', borderRadius:3, cursor: running ? 'default' : 'pointer',
+        fontFamily:'inherit', fontSize:11, outline:'none', background:'transparent',
         color: running ? '#2a2a5a' : '#4488cc',
         border: `1px solid ${running ? '#1a1a44' : '#4488cc'}`,
       }}>⏭ Schritt [.]</button>
       <button onClick={() => setRunning(!running)} style={{
-        padding: '3px 14px', borderRadius: 3, cursor: 'pointer', fontSize: 11,
-        fontFamily: 'inherit', fontWeight: 'bold', border: 'none', outline: 'none',
-        background: running ? '#cc3333' : '#00aa55', color: '#000',
+        padding:'3px 14px', borderRadius:3, cursor:'pointer', fontSize:11,
+        fontFamily:'inherit', fontWeight:'bold', border:'none', outline:'none',
+        background: running ? '#cc3333' : '#00aa55', color:'#000',
       }}>{running ? '⏸ Pause' : '▶ Play'} [Space]</button>
-      <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#445' }}>
+      <label style={{ display:'flex', alignItems:'center', gap:5, fontSize:11, color:'#445' }}>
         <input type="range" min={1} max={30} value={hz}
           onChange={e => setHz(+e.target.value)}
-          style={{ width: 65, accentColor: '#4455ee' }} />
-        <span style={{ color: '#4488cc', minWidth: 32 }}>{hz} Hz</span>
+          style={{ width:65, accentColor:'#4455ee' }} />
+        <span style={{ color:'#4488cc', minWidth:32 }}>{hz} Hz</span>
       </label>
       <button onClick={clear} style={{
-        padding: '3px 8px', borderRadius: 3, cursor: 'pointer', fontSize: 11,
-        fontFamily: 'inherit', background: 'transparent',
-        color: '#cc4444', border: '1px solid #662222', outline: 'none',
+        padding:'3px 8px', borderRadius:3, cursor:'pointer', fontSize:11,
+        fontFamily:'inherit', background:'transparent',
+        color:'#cc4444', border:'1px solid #662222', outline:'none',
       }}>🗑 Reset</button>
     </div>
   );
