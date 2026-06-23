@@ -1,4 +1,5 @@
 import { useRef, useEffect, useCallback } from 'react';
+<<<<<<< HEAD
 import { useGridStore }    from '../store/gridStore';
 import { useUIStore }      from '../store/uiStore';
 import { renderFrame }     from '../canvas/renderer';
@@ -6,6 +7,14 @@ import { PointerController } from '../canvas/input';
 import { zoomAtPoint }     from '../canvas/coordinates';
 import type { Camera }     from '../canvas/coordinates';
 import type { Tool }       from '../canvas/input';
+=======
+import { useGridStore }  from '../store/gridStore';
+import { useUIStore }    from '../store/uiStore';
+import { renderFrame }   from '../canvas/renderer';
+import { createMouseState, getCellAt, applyWheel, type Tool } from '../canvas/input';
+import { key }           from '../simulation/grid';
+import type { Camera }   from '../canvas/renderer';
+>>>>>>> 6a572fc354476e0f428dad6614c44ea4f1cbc4d6
 
 export function Canvas() {
   const canvasRef    = useRef<HTMLCanvasElement>(null);
