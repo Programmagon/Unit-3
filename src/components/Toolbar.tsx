@@ -22,7 +22,7 @@ export function Toolbar() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (['INPUT','TEXTAREA'].includes((e.target as HTMLElement).tagName)) return;
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) return;
       if (e.key === '1') setTool('cable');
       if (e.key === '2') setTool('inverter');
       if (e.key === '3') setTool('delay');

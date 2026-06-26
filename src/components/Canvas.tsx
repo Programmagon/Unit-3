@@ -1,110 +1,120 @@
-import { useRef, useEffect, useCallback } from "react";
-import { useGridStore } from "../store/gridStore";
-import { useUIStore } from "../store/uiStore";
-import { renderFrame } from "../canvas/renderer";
-import { PointerController } from "../canvas/input";
-import { zoomAtPoint } from "../canvas/coordinates";
-import type { Camera } from "../canvas/coordinates";
-import type { Tool } from "../canvas/input";
+import { useRef, useEffect, useCallback } from 'react';
+import { useGridStore }      from '../store/gridStore';
+import { useUIStore }        from '../store/uiStore';
+import { renderFrame }       from '../canvas/renderer';
+import { PointerController } from '../canvas/input';
+import { zoomAtPoint }       from '../canvas/coordinates';
+import type { Camera }       from '../canvas/coordinates';
+import type { Tool }         from '../canvas/input';
+
+// Kamera-Startwert — lebt als Ref, kein Zustand, keine React-Re-Renders
+const INITIAL_CAMERA: Camera = { x: -15, y: -9, zoom: 36 };
 
 export function Canvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const ctrlRef = useRef<PointerController | null>(null);
+  const ctrlRef   = useRef<PointerController | null>(null);
 
-  // ── Store-Selektoren ──────────────────────────────────────────────
-  const grid = useGridStore((s) => s.grid);
-  const setCell = useGridStore((s) => s.setCell);
-  const delCell = useGridStore((s) => s.deleteCell);
-  const togState = useGridStore((s) => s.toggleState);
-  const gridRef = useRef(grid);
-  gridRef.current = grid;
+  // ── Kamera als Ref — direktes Mutieren, kein Zustand ─────────────────
+  // Pan und Zoom mutieren cameraRef.current direkt und setzen dirtyRef=true.
+  // Der rAF-Loop zeichnet den nächsten Frame wenn dirty — kein React-Overhead.
+  const cameraRef = useRef<Camera>({ ...INITIAL_CAMERA });
+  const dirtyRef  = useRef(true);
+  const rafRef    = useRef(0);
 
-  const tool = useUIStore((s) => s.tool);
-  const toolRef = useRef<Tool>(tool);
-  const camera = useUIStore((s) => s.camera);
-  const cameraRef = useRef<Camera>(camera);
-  const updateCamera = useUIStore((s) => s.updateCamera);
+  // ── Grid aus Zustand (nur für Platzieren/Löschen nötig) ───────────────
+  const grid         = useGridStore(s => s.grid);
+  const setCell      = useGridStore(s => s.setCell);
+  const delCell      = useGridStore(s => s.deleteCell);
+  const toggleForced = useGridStore(s => s.toggleForced);
+  const gridRef      = useRef(grid);
+  gridRef.current    = grid; // immer aktuell für Event-Handler
 
-  useEffect(() => {
-    toolRef.current = tool;
-  }, [tool]);
-  useEffect(() => {
-    cameraRef.current = camera;
-  }, [camera]);
+  // ── Werkzeug ──────────────────────────────────────────────────────────
+  const tool      = useUIStore(s => s.tool);
+  const toolRef   = useRef<Tool>(tool);
+  useEffect(() => { toolRef.current = tool; }, [tool]);
 
-  // ── Zeichnen ──────────────────────────────────────────────────────
+  // ── Zeichnen ──────────────────────────────────────────────────────────
+  // Liest ausschließlich aus Refs — kein React-Kontext nötig.
   const draw = useCallback(() => {
-    const c = canvasRef.current;
-    if (!c) return;
-    const ctx = c.getContext("2d")!;
+    const c = canvasRef.current; if (!c) return;
+    const ctx = c.getContext('2d')!;
     const dpr = window.devicePixelRatio || 1;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    renderFrame(
-      ctx,
-      gridRef.current,
-      cameraRef.current,
-      c.clientWidth,
-      c.clientHeight,
-    );
-  }, []);
+    renderFrame(ctx, gridRef.current, cameraRef.current, c.clientWidth, c.clientHeight);
+  }, []); // keine Deps — liest aus stabilen Refs
 
+  // ── rAF-Loop ──────────────────────────────────────────────────────────
+  // Zeichnet nur wenn dirty, entkoppelt Drawing von React-Render-Zyklen.
+  // Pan/Zoom: dirty=true → nächster Frame → draw. Kein Zustand, kein Re-Render.
   useEffect(() => {
-    draw();
-  }, [draw, grid, camera]);
+    dirtyRef.current = true;
+    const loop = () => {
+      if (dirtyRef.current) { draw(); dirtyRef.current = false; }
+      rafRef.current = requestAnimationFrame(loop);
+    };
+    rafRef.current = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [draw]);
 
-  // ── HiDPI-Resize ──────────────────────────────────────────────────
+  // Grid-Änderung (Zustand) → dirty markieren → rAF zeichnet nächsten Frame
+  useEffect(() => { dirtyRef.current = true; }, [grid]);
+
+  // ── HiDPI-Resize ──────────────────────────────────────────────────────
   useEffect(() => {
     const c = canvasRef.current!;
     const ro = new ResizeObserver(() => {
       const dpr = window.devicePixelRatio || 1;
-      c.width = c.clientWidth * dpr;
+      c.width  = c.clientWidth  * dpr;
       c.height = c.clientHeight * dpr;
-      draw();
+      dirtyRef.current = true;
     });
     ro.observe(c);
     return () => ro.disconnect();
-  }, [draw]);
+  }, []);
 
-  // ── PointerController einrichten ──────────────────────────────────
+  // ── PointerController einrichten ──────────────────────────────────────
   useEffect(() => {
     const c = canvasRef.current!;
 
     const ctrl = new PointerController(
       c,
       {
-        // onPlace: Zelle setzen, typ wechseln oder State toggeln
         onPlace: (cx, cy, isDrag) => {
-          const t = toolRef.current;
-          if (t === "delete") {
-            delCell(cx, cy);
-            return;
-          }
-          const g = gridRef.current;
-          const k = `${cx},${cy}`;
+          const t  = toolRef.current;
+          const g  = gridRef.current;
+          const k  = `${cx},${cy}`;
+
+          if (t === 'delete') { delCell(cx, cy); return; }
+
           if (!g.has(k)) {
             setCell(cx, cy, t);
           } else if (!isDrag) {
             const cell = g.get(k)!;
-            if (cell.type === t) togState(cx, cy);
-            else setCell(cx, cy, t, cell.state);
+            if (cell.type === t) {
+              // Gleicher Typ + Tap → Forced togglen (⊕ an/aus)
+              toggleForced(cx, cy);
+            } else {
+              // Anderer Typ → Typ wechseln, Force zurücksetzen
+              setCell(cx, cy, t, cell.state);
+            }
           }
         },
 
-        // onDelete: immer löschen, unabhängig vom aktiven Tool
         onDelete: (cx, cy) => delCell(cx, cy),
 
-        // onPan: Delta in Canvas-Pixel → Kamera verschieben
-        onPan: (dx, dy) =>
-          updateCamera((cam) => {
-            cam.x -= dx / cam.zoom;
-            cam.y -= dy / cam.zoom;
-          }),
+        // Kamera direkt mutieren — kein Zustand, kein Re-Render
+        onPan: (dx, dy) => {
+          const cam = cameraRef.current;
+          cam.x -= dx / cam.zoom;
+          cam.y -= dy / cam.zoom;
+          dirtyRef.current = true;
+        },
 
-        // onZoom: Faktor + Fokuspunkt in Canvas-Pixel → Kamera zoomen
-        onZoom: (factor, focalSx, focalSy) =>
-          updateCamera((cam) => {
-            zoomAtPoint(cam, factor, focalSx, focalSy);
-          }),
+        onZoom: (factor, focalSx, focalSy) => {
+          zoomAtPoint(cameraRef.current, factor, focalSx, focalSy);
+          dirtyRef.current = true;
+        },
       },
       () => cameraRef.current,
       () => toolRef.current,
@@ -112,46 +122,29 @@ export function Canvas() {
 
     ctrlRef.current = ctrl;
 
-    // Mausrad als non-passive Listener (preventDefault nötig)
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      ctrl.wheel(e);
-    };
-    c.addEventListener("wheel", onWheel, { passive: false });
+    const onWheel = (e: WheelEvent) => { e.preventDefault(); ctrl.wheel(e); };
+    c.addEventListener('wheel', onWheel, { passive: false });
 
     return () => {
-      c.removeEventListener("wheel", onWheel);
+      c.removeEventListener('wheel', onWheel);
       ctrlRef.current = null;
     };
-    // Callbacks sind stabil (Store-Actions + updateCamera ändern sich nie)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // stabil — Callbacks schließen über Refs
 
-  // ── React Pointer-Event-Handler (dünne Weiterleitungsschicht) ─────
-  // Canvas.tsx kennt keine Gesten-Logik mehr — alles läuft durch den Controller.
-  const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) =>
-    ctrlRef.current?.pointerDown(e.nativeEvent);
-  const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) =>
-    ctrlRef.current?.pointerMove(e.nativeEvent);
-  const onPointerUp = (e: React.PointerEvent<HTMLCanvasElement>) =>
-    ctrlRef.current?.pointerUp(e.nativeEvent);
-  const onPointerCancel = (e: React.PointerEvent<HTMLCanvasElement>) =>
-    ctrlRef.current?.pointerCancel(e.nativeEvent);
+  // ── Pointer-Events ───────────────────────────────────────────────────
+  const fwd = (fn: (e: PointerEvent) => void) =>
+    (e: React.PointerEvent<HTMLCanvasElement>) => fn(e.nativeEvent);
 
   return (
     <canvas
       ref={canvasRef}
-      style={{
-        flex: 1,
-        display: "block",
-        cursor: "crosshair",
-        touchAction: "none",
-      }}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerCancel}
-      onContextMenu={(e) => e.preventDefault()}
+      style={{ flex: 1, display: 'block', cursor: 'crosshair', touchAction: 'none' }}
+      onPointerDown={fwd(e  => ctrlRef.current?.pointerDown(e))}
+      onPointerMove={fwd(e  => ctrlRef.current?.pointerMove(e))}
+      onPointerUp={fwd(e    => ctrlRef.current?.pointerUp(e))}
+      onPointerCancel={fwd(e => ctrlRef.current?.pointerCancel(e))}
+      onContextMenu={e => e.preventDefault()}
     />
   );
 }
