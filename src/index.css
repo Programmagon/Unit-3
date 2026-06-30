@@ -1,13 +1,197 @@
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/* ═══════════════════════════════════════════════════════════════
+   Unit-3  —  Design Tokens & Layout
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Reset ──────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { overflow: hidden; }
+#root { height: 100vh; }
+
+/* ── Design Tokens ──────────────────────────────────────────── */
+:root {
+  --bg-app:      #0b0b1e;
+  --bg-ui:       #0f0f2a;
+  --border-ui:   #1c1c48;
+  --accent:      #4455ee;
+  --cell-cable:  #00ff88;
+  --cell-inv:    #ff9900;
+  --cell-delay:  #bb44ff;
+  --cell-delete: #ff4455;
+  --sim-blue:    #4488cc;
+  --sim-green:   #00aa55;
+  --sim-red:     #cc3333;
+  --text-dim:    #334466;
+  --text-muted:  #445566;
+  --font:        'Courier New', monospace;
+  --touch-target: 44px;
 }
-body {
+
+/* ── App-Layout (CSS Grid) ──────────────────────────────────── */
+/*
+  CSS Grid mit benannten Areas ist robuster als Flexbox + order:
+  - Keine min-height-Probleme
+  - Grid-Area-Zuweisung macht Absicht klar
+  - Kein Accessibility-Problem durch DOM/Visuell-Diskrepanz
+  
+  Desktop (≥ 600px):  toolbar → canvas → status
+  Mobile  (< 600px):  canvas  → status → toolbar
+*/
+.app-layout {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "toolbar"
+    "canvas"
+    "status";
+  height: 100vh;
+  background: var(--bg-app);
+  font-family: var(--font);
+  user-select: none;
   overflow: hidden;
 }
-#root {
-  height: 100vh;
+
+.top-bar     { grid-area: toolbar; }
+.canvas-area { grid-area: canvas;  }
+.status-bar  { grid-area: status;  }
+
+/* ── top-bar ────────────────────────────────────────────────── */
+.top-bar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-shrink: 0;
+  min-height: var(--touch-target);
+  background: var(--bg-ui);
+  border-bottom: 1px solid var(--border-ui);
+}
+
+/* ── canvas-area ─────────────────────────────────────────────── */
+/*
+  Kein display:flex hier — das war der Bug:
+  Ein horizontaler Flex-Container macht canvas.clientHeight = 0.
+  position:relative reicht für die absolut positionierte step-overlay.
+*/
+.canvas-area {
+  position: relative;
+  overflow: hidden;
+  /* grid-area: canvas → Grid gibt die Größe vor, kein min-height nötig */
+}
+
+/* Canvas füllt die canvas-area vollständig */
+.canvas-area canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none; /* PointerController übernimmt alle Touch-Gesten */
+}
+
+/* ── Step-Overlay (Schritt-Zähler auf Mobile) ───────────────── */
+.step-overlay {
+  display: none;
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  background: rgba(15, 15, 42, 0.75);
+  border: 1px solid var(--border-ui);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 10px;
+  color: var(--sim-blue);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ── Toolbar-Buttons ────────────────────────────────────────── */
+.tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: var(--touch-target);
+  min-width: var(--touch-target);
+  padding: 0 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 12px;
+  border: 1px solid transparent;
+  outline: none;
+  white-space: nowrap;
+  transition: background 0.1s, color 0.1s;
+  background: transparent;
+}
+
+/* ── Sim-Buttons ────────────────────────────────────────────── */
+.sim-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: var(--touch-target);
+  padding: 0 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 12px;
+  outline: none;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+.sim-btn:disabled { cursor: default; opacity: 0.38; }
+
+/* ── Keyboard-Shortcut-Labels ───────────────────────────────── */
+.shortcut { opacity: 0.38; font-size: 10px; }
+@media (hover: none) { .shortcut { display: none; } }
+
+/* ── Statusleiste ───────────────────────────────────────────── */
+.status-row {
+  display: flex;
+  align-items: center;
+  padding: 3px 10px;
+  background: var(--bg-ui);
+  border-top: 1px solid var(--border-ui);
+  font-size: 10px;
+  color: var(--text-dim);
+  min-height: 24px;
+}
+.hint-text { flex: 1; }
+
+/* ── Loop-Error-Banner ──────────────────────────────────────── */
+.loop-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #2a0000;
+  border-top: 1px solid #880000;
+  font-size: 11px;
+  color: #ff6666;
+}
+
+/* ── Mobile-Layout (< 600px) ────────────────────────────────── */
+@media (max-width: 599px) {
+  .app-layout {
+    grid-template-rows: 1fr auto auto;
+    grid-template-areas:
+      "canvas"
+      "status"
+      "toolbar";
+  }
+
+  /* Toolbar wird zur Bottom-Nav */
+  .top-bar {
+    flex-direction: column;
+    align-items: stretch;
+    border-top: 1px solid var(--border-ui);
+    border-bottom: none;
+  }
+
+  /* Schritt-Overlay einblenden */
+  .step-overlay { display: block; }
+
+  /* Hz-Slider, Reset und Hilfetext auf Mobile ausblenden */
+  .hz-control { display: none !important; }
+  .reset-btn  { display: none !important; }
+  .hint-text  { display: none; }
+  .logo-text  { display: none; }
 }

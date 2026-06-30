@@ -139,7 +139,7 @@ export function Canvas() {
   return (
     <canvas
       ref={canvasRef}
-      style={{ flex: 1, display: 'block', cursor: 'crosshair', touchAction: 'none' }}
+      style={{ cursor: 'crosshair' }}
       onPointerDown={fwd(e  => ctrlRef.current?.pointerDown(e))}
       onPointerMove={fwd(e  => ctrlRef.current?.pointerMove(e))}
       onPointerUp={fwd(e    => ctrlRef.current?.pointerUp(e))}
